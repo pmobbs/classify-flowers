@@ -162,12 +162,12 @@ def main():
                                     transforms.Normalize([0.485, 0.456, 0.406], 
                                                         [0.229, 0.224, 0.225])])
 
-    # TODO: Load the datasets with ImageFolder
+    # Load the datasets with ImageFolder
     train_data = datasets.ImageFolder(train_dir, transform=data_transforms_train)
     val_data = datasets.ImageFolder(valid_dir, transform=data_transforms_test)
     test_data = datasets.ImageFolder(test_dir, transform=data_transforms_test)
 
-    # TODO: Using the image datasets and the trainforms, define the dataloaders
+    # Using the image datasets and the trainforms, define the dataloaders
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=32)
     valloader = torch.utils.data.DataLoader(val_data, batch_size=32)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=32)
@@ -194,8 +194,8 @@ def main():
     model.to(device)
 
     # Do training
-    #print("Starting training...")
-    #train(model, trainloader, criterion, optimizer, valloader, int(in_arg.epochs), device, in_arg.arch, num_labels, hidden_units)
+    print("Starting training...")
+    train(model, trainloader, criterion, optimizer, valloader, int(in_arg.epochs), device, in_arg.arch, num_labels, hidden_units)
 
     # Write final checkpoint
     save_checkpoint('checkpoint.pth', int(in_arg.epochs), in_arg.arch, num_labels, hidden_units, model.state_dict())

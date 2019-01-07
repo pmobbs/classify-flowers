@@ -32,6 +32,7 @@ from torch.autograd import Variable
 import matplotlib.image as mpimg
 
 from time import time, sleep
+import os
 
 from get_input_args_predict import get_input_args_predict
 from build_model import build_model
@@ -119,18 +120,34 @@ def main():
     # the variable in_arg
     in_arg = get_input_args_predict()
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() and in_arg.gpu == '1' else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() and in_arg.gpu == True else "cpu")
+
+    # Check file paths
+    if (not os.path.exists(in_arg.path_to_image)):
+        print("path_to_image file not found")
+        return 1
+    
+    if (not os.path.exists(in_arg.checkpoint)):
+        print("checkpoint file not found")
+        return 1
+
+    category_names = ''
+    if (in_arg.category_names != ''):
+        category_names = in_arg.category_names[0]
+        if (not os.path.exists(category_names)):
+            print("category_names file not found")
+            return 1
 
     # Load checkpoint
-    model = load_checkpoint(in_arg.model[0])
+    model = load_checkpoint(in_arg.checkpoint)
     
     # Run prediction
-    probs, classes = predict(in_arg.image[0],model, int(in_arg.top_k), device)
+    probs, classes = predict(in_arg.path_to_image,model, int(in_arg.top_k), device)
     print("Top-K Probabilities: " + str(probs))
     print("Classes: " + str(classes))
     
-    if (in_arg.category_names != ''):
-        print("Labels:" + str(classes_to_labels(classes, in_arg.category_names[0])))
+    if (category_names != ''):
+        print("Labels:" + str(classes_to_labels(classes, category_names)))
     
     # Measure total program runtime by collecting end time
     end_time = time()

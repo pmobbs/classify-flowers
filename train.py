@@ -34,6 +34,7 @@ from torch.autograd import Variable
 import matplotlib.image as mpimg
 
 from time import time, sleep
+import os
 
 from get_input_args_train import get_input_args_train
 from build_model import build_model
@@ -54,7 +55,7 @@ def validation(model, testloader, criterion, device):
     
     return test_loss, accuracy
 
-def train(model, trainloader, criterion, optimizer, valloader, epochs, device, arch, num_classes, hidden_units):
+def train(model, trainloader, criterion, optimizer, valloader, epochs, device, arch, num_classes, hidden_units, save_dir):
     if (epochs < 1):
         epochs = 1
 
@@ -113,7 +114,7 @@ def train(model, trainloader, criterion, optimizer, valloader, epochs, device, a
             print("Skip writing for epoch "+str(e+1))
             continue
         
-        save_checkpoint('checkpoint'+str(e%2)+'.pth', e, arch, num_classes, hidden_units, model.state_dict())
+        save_checkpoint(save_dir+'/checkpoint'+str(e%2)+'.pth', e, arch, num_classes, hidden_units, model.state_dict())
         
 def save_checkpoint(filename, e, arch, num_classes, hidden_units, state_dict):
         # save the state at the end of each epoch
@@ -129,12 +130,6 @@ def save_checkpoint(filename, e, arch, num_classes, hidden_units, state_dict):
 def main():
     # Measures total program runtime by collecting start time
     start_time = time()
-    
-    # Default locations for training data
-    data_dir = 'flowers'
-    train_dir = data_dir + '/train'
-    valid_dir = data_dir + '/valid'
-    test_dir = data_dir + '/test'
 
     # This function retrieves Command Line Arugments from user as input from
     # the user running the program from a terminal window. This function returns
@@ -142,10 +137,32 @@ def main():
     # the variable in_arg
     in_arg = get_input_args_train()
     
-    device = torch.device("cuda:0" if torch.cuda.is_available() and in_arg.gpu == '1' else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() and in_arg.gpu == True else "cpu")
     
-    print("arch=\'" + in_arg.arch + "\', epochs=\'" + in_arg.epochs + "\', gpu=\'" + in_arg.gpu + "\', " + 
-          "hidden_units=\'" + in_arg.hidden_units + "\', learning_rate=\'" + in_arg.learning_rate + "\'")
+    # If user enters a value, save_dir comes in as a list. Otherwise, it's a string
+    save_dir = in_arg.save_dir
+    if(type(save_dir) == list):
+        save_dir = str(save_dir[0]) 
+
+    print("data_directory=\'" + in_arg.data_directory + "/', arch=\'" + in_arg.arch + "\', epochs=\'" + in_arg.epochs + "\', gpu=\'" + str(in_arg.gpu) + "\', " + 
+          "hidden_units=\'" + in_arg.hidden_units + "\', learning_rate=\'" + in_arg.learning_rate + "\', save_dir=\'" + save_dir + "\'")
+
+    # Check directory names
+    if (os.path.isdir(in_arg.data_directory)):
+        data_dir = in_arg.data_directory
+        # Check locations for training data
+        train_dir = data_dir + '/train'
+        val_dir = data_dir + '/valid'
+        if ((not os.path.isdir(train_dir)) or (not os.path.isdir(val_dir))):
+            print("Could not find train or valid directory within data_directory")
+            return 1
+    else:
+        print("data_directory is not a directory")
+        return 1
+
+    if (not os.path.isdir(save_dir)):
+        print("save_dir is not a directory")
+        return 1
 
     # Define transformations on training and validation data
     data_size = 224
@@ -164,17 +181,17 @@ def main():
 
     # Load the datasets with ImageFolder
     train_data = datasets.ImageFolder(train_dir, transform=data_transforms_train)
-    val_data = datasets.ImageFolder(valid_dir, transform=data_transforms_test)
-    test_data = datasets.ImageFolder(test_dir, transform=data_transforms_test)
+    val_data = datasets.ImageFolder(val_dir, transform=data_transforms_test)
+    #test_data = datasets.ImageFolder(test_dir, transform=data_transforms_test)
 
     # Using the image datasets and the trainforms, define the dataloaders
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=32)
     valloader = torch.utils.data.DataLoader(val_data, batch_size=32)
-    testloader = torch.utils.data.DataLoader(test_data, batch_size=32)
+    #testloader = torch.utils.data.DataLoader(test_data, batch_size=32)
 
     print("Loaded dataset size for training: " + str(len(train_data)))
     print("Loaded dataset size for validation: " + str(len(val_data)))
-    print("Loaded dataset size for testing: " + str(len(test_data)))
+    #print("Loaded dataset size for testing: " + str(len(test_data)))
 
     print("Classes: ")
     class_names = train_data.classes
@@ -195,7 +212,7 @@ def main():
 
     # Do training
     print("Starting training...")
-    train(model, trainloader, criterion, optimizer, valloader, int(in_arg.epochs), device, in_arg.arch, num_labels, hidden_units)
+    train(model, trainloader, criterion, optimizer, valloader, int(in_arg.epochs), device, in_arg.arch, num_labels, hidden_units, save_dir)
 
     # Write final checkpoint
     save_checkpoint('checkpoint.pth', int(in_arg.epochs), in_arg.arch, num_labels, hidden_units, model.state_dict())

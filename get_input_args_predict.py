@@ -15,11 +15,11 @@ import argparse
 def get_input_args_predict():
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-i', '--image', nargs=1, default='', help='Image file to run prediction on', required=True)
-	parser.add_argument('-m', '--model', nargs=1, default='', help='Model checkpoint file', required=True)
+	parser.add_argument('path_to_image', action='store', help='Image file to run prediction on')
+	parser.add_argument('checkpoint', action='store', help='Model checkpoint file')
 	parser.add_argument('--top_k', nargs='?', default='3', help='Return top KK most likely classes as --top_k default value 3')
 	parser.add_argument('--category_names', nargs=1, default='', help='JSON file mapping categories to real names')
-	parser.add_argument('--gpu', nargs='?', default='0', help='Use GPU for inference as --gpu with default value 0')
+	parser.add_argument('--gpu', action="store_true", default=False, help='Use GPU for training as --gpu with default value False')
 
 	args = parser.parse_args()
  
